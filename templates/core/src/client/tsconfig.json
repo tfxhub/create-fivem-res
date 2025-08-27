@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "../../types",
+    "emitDeclarationOnly": true,
+    "paths": {
+      "@client/*": [
+        "./*"
+      ],
+      "@common/*": [
+        "../common/*"
+      ],
+      "@/*": ["../*"],
+      "@@/*": ["../../*"]
+    },
+    "types": [
+      "@citizenfx/client"
+    ]
+  },
+  "include": [
+    "./",
+    "../common"
+  ],
+  "extends": "../tsconfig"
+}
