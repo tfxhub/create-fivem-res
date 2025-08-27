@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
-import { FormatterLinterTool } from './config.js';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { FormatterLinterTool } from './config.js';
 
 /**
  * Recursively copies a directory and all its contents to a destination

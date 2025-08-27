@@ -45,7 +45,7 @@ export const FORMATTER_LINTER_TOOLS: FormatterLinterTool[] = [
             format: 'biome format --write',
             lint: 'biome lint --write',
         },
-        configFiles: ['biome.json'],
+        configFiles: ['biome.json.template'],
     },
     {
         id: 'prettier',

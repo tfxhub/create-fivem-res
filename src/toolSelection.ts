@@ -1,6 +1,6 @@
-import prompts from 'prompts';
 import kleur from 'kleur';
-import { FormatterLinterTool, FORMATTER_LINTER_TOOLS } from './config.js';
+import prompts from 'prompts';
+import { FORMATTER_LINTER_TOOLS, type FormatterLinterTool } from './config.js';
 
 export interface ToolSelectionResult {
     selectedTools: FormatterLinterTool[];
@@ -49,18 +49,20 @@ export async function selectFormatterLinterTools(): Promise<ToolSelectionResult>
     let hasLinting = false;
 
     switch (response.toolChoice) {
-        case 'biomejs':
+        case 'biomejs': {
             const biomeTool = FORMATTER_LINTER_TOOLS.find((tool) => tool.id === 'biomejs')!;
             selectedTools.push(biomeTool);
             hasFormatting = true;
             hasLinting = true;
             break;
+        }
 
-        case 'prettier':
+        case 'prettier': {
             const prettierTool = FORMATTER_LINTER_TOOLS.find((tool) => tool.id === 'prettier')!;
             selectedTools.push(prettierTool);
             hasFormatting = true;
             break;
+        }
 
         case 'none':
             break;

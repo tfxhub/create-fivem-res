@@ -1,7 +1,7 @@
-import { execSync } from 'child_process';
-import prompts from 'prompts';
+import { execSync } from 'node:child_process';
 import kleur from 'kleur';
-import { PackageManager, PACKAGE_MANAGERS } from './config.js';
+import prompts from 'prompts';
+import { PACKAGE_MANAGERS, type PackageManager } from './config.js';
 
 /**
  * Checks if a package manager is available on the system

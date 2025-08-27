@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, copyFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
-import ora from 'ora';
+import { execSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import kleur from 'kleur';
-import { DEV_DEPENDENCIES, DEPENDENCIES } from './config.js';
-import { copyDirectory, replaceTemplateVariables, addToolScriptsToPackageJson } from './utils.js';
-import { selectPackageManager, installDependencies } from './packageManager.js';
+import ora from 'ora';
+import { DEPENDENCIES, DEV_DEPENDENCIES } from './config.js';
+import { initializeGitRepository } from './gitInit.js';
+import { installDependencies, selectPackageManager } from './packageManager.js';
 import { selectFormatterLinterTools } from './toolSelection.js';
+import { addToolScriptsToPackageJson, copyDirectory, replaceTemplateVariables } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -60,7 +61,10 @@ async function main(): Promise<void> {
             if (existsSync(toolDir)) {
                 for (const configFile of tool.configFiles) {
                     const srcPath = join(toolDir, configFile);
-                    const destPath = join(targetDir, configFile);
+                    const destFileName = configFile.endsWith('.template')
+                        ? configFile.replace('.template', '')
+                        : configFile;
+                    const destPath = join(targetDir, destFileName);
                     if (existsSync(srcPath)) {
                         copyFileSync(srcPath, destPath);
                     }
@@ -97,20 +101,27 @@ async function main(): Promise<void> {
         execSync(selectedPM.installCmd, { stdio: 'pipe' });
         spinner.succeed('Base dependencies installed');
 
-        spinner = ora('Installing FiveM dependencies...').start();
+        spinner = ora('Installing FiveM dev dependencies...').start();
         installDependencies(selectedPM, DEV_DEPENDENCIES, true);
+        spinner.succeed('FiveM dev dependencies installed');
+
+        spinner = ora('Installing FiveM runtime dependencies...').start();
         installDependencies(selectedPM, DEPENDENCIES, false);
+        spinner.succeed('FiveM runtime dependencies installed');
 
         if (toolSelection.selectedTools.length > 0) {
             const toolDependencies = toolSelection.selectedTools.flatMap((tool) => tool.dependencies);
             if (toolDependencies.length > 0) {
+                spinner = ora('Installing tool dependencies...').start();
                 installDependencies(selectedPM, toolDependencies, true);
+                spinner.succeed('Tool dependencies installed');
             }
         }
 
-        spinner.succeed('Dependencies installed');
+        process.chdir(targetDir);
+        initializeGitRepository(targetDir);
 
-        console.log('\n' + kleur.green().bold('✅ Success!'));
+        console.log(`\n${kleur.green().bold('✅ Success! 🎉')}`);
         console.log(kleur.gray(`Your FiveM resource "${resourceName}" has been created.\n`));
 
         if (toolSelection.selectedTools.length > 0) {
@@ -123,9 +134,13 @@ async function main(): Promise<void> {
 
         console.log(kleur.bold('Next steps:'));
         console.log(kleur.cyan(`  cd ${resourceName}`));
-        console.log(kleur.cyan(`  ${selectedPM.command} ${selectedPM.command === 'bun' || 'npm' ? 'run' : ''} dev`));
+        console.log(
+            kleur.cyan(
+                `  ${selectedPM.command} ${selectedPM.command === 'bun' || selectedPM.command === 'npm' ? 'run' : ''} dev`,
+            ),
+        );
 
-        console.log('\n' + kleur.gray('Happy coding! 🎮'));
+        console.log(`\n${kleur.gray('Happy coding! 🎮')}`);
     } catch (error) {
         spinner.fail('An error occurred');
         console.error(kleur.red('❌ Error:'), error instanceof Error ? error.message : error);
@@ -137,7 +152,7 @@ async function main(): Promise<void> {
  * Handle process interruption gracefully
  */
 process.on('SIGINT', () => {
-    console.log('\n' + kleur.yellow('👋 Operation cancelled'));
+    console.log(`\n${kleur.yellow('👋 Operation cancelled')}`);
     process.exit(0);
 });
 
