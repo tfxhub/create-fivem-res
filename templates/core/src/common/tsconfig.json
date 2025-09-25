@@ -1,25 +1,16 @@
 {
     "compilerOptions": {
-      "baseUrl": ".",
-      "outDir": "../../types",
-      "emitDeclarationOnly": true,
-      "paths": {
-        "@common/*": [
-          "./*"
-        ],
-        "@/*": ["../*"],
-        "@@/*": ["../../*"]
-      },
-      "types": [
-        "@citizenfx/server",
-        "@citizenfx/client"
-      ],
+        "baseUrl": ".",
+        "outDir": "../../types",
+        "emitDeclarationOnly": true,
+        "paths": {
+            "@common/*": ["./*"],
+            "@/*": ["../*"],
+            "@@/*": ["../../*"]
+        },
+        "types": ["@citizenfx/server", "@citizenfx/client"]
     },
-    "exclude": [
-      "node_modules"
-    ],
-    "include": [
-      "./"
-    ],
+    "exclude": ["node_modules"],
+    "include": ["./"],
     "extends": "../tsconfig"
-  }
+}

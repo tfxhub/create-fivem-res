@@ -1,4 +1,7 @@
-import { execSync } from 'node:child_process';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execAsync = promisify(exec);
 import kleur from 'kleur';
 import ora from 'ora';
 
@@ -6,14 +9,14 @@ import ora from 'ora';
  * Initializes a git repository, stages all files, and makes an initial commit
  * @param targetDir - The directory where the git repository should be initialized
  */
-export function initializeGitRepository(targetDir: string): void {
+export async function initializeGitRepository(targetDir: string): Promise<void> {
     const spinner = ora('Initializing git repository...').start();
 
     try {
-        execSync('git --version', { stdio: 'pipe', cwd: targetDir });
-        execSync('git init', { stdio: 'pipe', cwd: targetDir });
-        execSync('git add .', { stdio: 'pipe', cwd: targetDir });
-        execSync('git commit -m "Initial commit"', { stdio: 'pipe', cwd: targetDir });
+        await execAsync('git --version', { cwd: targetDir });
+        await execAsync('git init', { cwd: targetDir });
+        await execAsync('git add .', { cwd: targetDir });
+        await execAsync('git commit -m "Initial commit"', { cwd: targetDir });
 
         spinner.succeed('Git repository initialized');
     } catch (error) {

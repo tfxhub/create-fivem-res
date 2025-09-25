@@ -7,10 +7,34 @@ export interface PackageManager {
 }
 
 export const PACKAGE_MANAGERS: PackageManager[] = [
-    { name: 'npm', command: 'npm', installCmd: 'npm install', devFlag: '--save-dev', execCommand: 'npx' },
-    { name: 'pnpm', command: 'pnpm', installCmd: 'pnpm install', devFlag: '--save-dev', execCommand: 'pnpm' },
-    { name: 'yarn', command: 'yarn', installCmd: 'yarn install', devFlag: '--dev', execCommand: 'yarn' },
-    { name: 'bun', command: 'bun', installCmd: 'bun install', devFlag: '--dev', execCommand: 'bunx' },
+    {
+        name: 'npm',
+        command: 'npm',
+        installCmd: 'npm install',
+        devFlag: '--save-dev',
+        execCommand: 'npx',
+    },
+    {
+        name: 'pnpm',
+        command: 'pnpm',
+        installCmd: 'pnpm install',
+        devFlag: '--save-dev',
+        execCommand: 'pnpm exec',
+    },
+    {
+        name: 'yarn',
+        command: 'yarn',
+        installCmd: 'yarn install',
+        devFlag: '--dev',
+        execCommand: 'yarn',
+    },
+    {
+        name: 'bun',
+        command: 'bun',
+        installCmd: 'bun install',
+        devFlag: '--dev',
+        execCommand: 'bunx',
+    },
 ];
 
 export const DEV_DEPENDENCIES = [
@@ -23,38 +47,38 @@ export const DEV_DEPENDENCIES = [
 
 export const DEPENDENCIES = ['@nativewrappers/fivem@latest', '@nativewrappers/server@latest'];
 
-export interface FormatterLinterTool {
+export interface OptionalFeature {
     id: string;
     name: string;
     description: string;
     dependencies: string[];
-    scripts: {
+    scripts?: {
         format?: string;
         lint?: string;
     };
     configFiles: string[];
+    isUIrequired: boolean;
 }
 
-export const FORMATTER_LINTER_TOOLS: FormatterLinterTool[] = [
-    {
-        id: 'biomejs',
-        name: 'Biome.js',
-        description: 'All-in-one formatter and linter (recommended)',
-        dependencies: ['@biomejs/biome@latest'],
-        scripts: {
-            format: 'biome format --write',
-            lint: 'biome lint --write',
-        },
-        configFiles: ['biome.json.template'],
-    },
+export const OPTIONAL_FEATURES: OptionalFeature[] = [
     {
         id: 'prettier',
         name: 'Prettier',
         description: 'Code formatter',
-        dependencies: ['prettier@latest'],
+        dependencies: ['prettier'],
         scripts: {
-            format: 'prettier --write "src/**/*.{ts,js,json}"',
+            format: 'prettier --write .',
+            lint: 'prettier --check .',
         },
-        configFiles: ['.prettierrc.json', '.prettierignore'],
+        configFiles: ['.prettierrc', '.prettierignore', '.vscode'],
+        isUIrequired: false,
+    },
+    {
+        id: 'tailwind',
+        name: 'Tailwind CSS',
+        description: 'Utility-first CSS framework',
+        dependencies: ['tailwindcss@3', 'postcss', 'autoprefixer'],
+        configFiles: ['tailwind.config.js'],
+        isUIrequired: true,
     },
 ];

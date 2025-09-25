@@ -1,31 +1,25 @@
 {
-  "compilerOptions": {
-    "baseUrl": ".",
-    "rootDir": ".",
-    "module": "es2022",
-    "target": "es2023",
-    "lib": [
-      "es2023"
-    ],
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "allowUnreachableCode": false,
-    "strictFunctionTypes": true,
-    "moduleResolution": "bundler",
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "skipLibCheck": true,
-    "declaration": true,
-    "noEmit": false,
-    "emitDeclarationOnly": true,
-    "removeComments": true,
-    "strict": true,
-    "noImplicitAny": true,
-  },
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "**/*"
-  ]
+    "compilerOptions": {
+        "baseUrl": ".",
+        "rootDir": ".",
+        "module": "es2022",
+        "target": "es2023",
+        "lib": ["es2023"],
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "allowUnreachableCode": false,
+        "strictFunctionTypes": true,
+        "moduleResolution": "bundler",
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "skipLibCheck": true,
+        "declaration": true,
+        "noEmit": false,
+        "emitDeclarationOnly": true,
+        "removeComments": true,
+        "strict": true,
+        "noImplicitAny": true
+    },
+    "exclude": ["node_modules"],
+    "include": ["**/*"]
 }

@@ -13,25 +13,28 @@ A CLI tool to quickly scaffold new FiveM resources with TypeScript.
 ## Usage
 
 ### Quick Start (Recommended)
+
 ```bash
 npx create-fivem-res my-awesome-resource
 ```
+
 or
 
 ```bash
 npx create fivem-res my-awesome-resource
 ```
 
-
 ### Alternative Methods
 
 #### Global Installation
+
 ```bash
 npm install -g create-fivem-res
 create-fivem-res my-awesome-resource
 ```
 
 #### Other Package Managers
+
 ```bash
 # With pnpm
 pnpm dlx create-fivem-res my-awesome-resource
@@ -48,7 +51,7 @@ This will:
 1. Create a new directory named `my-awesome-resource`
 2. Copy the FiveM TypeScript template files
 3. Prompt you to choose a package manager (npm, pnpm, yarn, or bun)
-4. Prompt you to choose a linter or formatter tool.
+4. Prompt you to choose optional features.
 5. Install all required dependencies
 6. Set up the project with proper TypeScript configuration
 
@@ -80,12 +83,13 @@ my-awesome-resource/
 
 ## How it works (for Lua users)
 
-- **You write TypeScript** in `src/client`,  `src/server` and `src/common`.
+- **You write TypeScript** in `src/client`, `src/server` and `src/common`.
 - The **builder (`tfxb`) compiles** your `.ts` files into plain JavaScript in `dist/` and **generates `fxmanifest.lua`** from your `fxmanifest.json` and `package.json`.
 - **Dev mode** (`npm run dev`) watches your files and rebuilds automatically. After a rebuild, **restart your resource** in the server console (e.g., `restart my-awesome-resource`).
 - **Natives are typed** via `@nativewrappers/fivem`. You call natives like you normally do, but now your editor tells you the correct parameters and warns on mistakes.
 - **Logging** uses `log.error|warn|info|debug|trace`. Set `env` in `fxmanifest.json` to `dev` for verbose logs or `prod` for quieter logs.
-```
+
+````
 
 ## Development
 
@@ -108,8 +112,8 @@ npm run types
 npm run format # if using Biome.js or Prettier
 
 # Lint code
-npm run lint # if using Biome.js
-```
+npm run lint # if using Biome.js (ESLint not supported by this CLI)
+````
 
 ## Requirements
 

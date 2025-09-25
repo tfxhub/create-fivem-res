@@ -1,7 +1,9 @@
-import { execSync } from 'node:child_process';
+import { exec, execSync } from 'node:child_process';
+import { promisify } from 'node:util';
 import kleur from 'kleur';
 import prompts from 'prompts';
 import { PACKAGE_MANAGERS, type PackageManager } from './config.js';
+import { getAddSubcommand } from './utils.js';
 
 /**
  * Checks if a package manager is available on the system
@@ -56,12 +58,14 @@ export async function selectPackageManager(): Promise<PackageManager> {
  * @param dependencies - Array of dependency names
  * @param isDev - Whether these are dev dependencies
  */
-export function installDependencies(
+export async function installDependencies(
     packageManager: PackageManager,
     dependencies: string[],
     isDev: boolean = false,
-): void {
+): Promise<void> {
     const devFlag = isDev ? packageManager.devFlag : '';
-    const command = `${packageManager.command} add ${dependencies.join(' ')} ${devFlag}`.trim();
-    execSync(command, { stdio: 'pipe' });
+    const addSubcommand = getAddSubcommand(packageManager);
+    const command = `${packageManager.command} ${addSubcommand} ${dependencies.join(' ')} ${devFlag}`.trim();
+    const execAsync = promisify(exec);
+    await execAsync(command);
 }

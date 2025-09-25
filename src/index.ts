@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
-import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execAsync = promisify(exec);
+import { copyFileSync, existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import kleur from 'kleur';
@@ -9,14 +12,23 @@ import ora from 'ora';
 import { DEPENDENCIES, DEV_DEPENDENCIES } from './config.js';
 import { initializeGitRepository } from './gitInit.js';
 import { installDependencies, selectPackageManager } from './packageManager.js';
-import { selectFormatterLinterTools } from './toolSelection.js';
-import { addToolScriptsToPackageJson, copyDirectory, replaceTemplateVariables } from './utils.js';
+import { selectOptionalFeatures } from './featureSelection.js';
+import { runUIFrameworkSetup, selectUIFramework } from './uiSelection.js';
+import {
+    addFeatureScriptsToPackageJson,
+    copyDirectory,
+    replaceTemplateVariables,
+    buildRunScriptCommand,
+    isValidDirectoryName,
+    copyFeatureConfigFiles,
+} from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const originalCwd = process.cwd();
 
 /**
- * Main function that orchestrates the FiveM resource creation process
+ * Main function that orchestrates the resource creation process
  */
 async function main(): Promise<void> {
     console.log(kleur.cyan().bold('🚀 Create FiveM Resource'));
@@ -31,6 +43,11 @@ async function main(): Promise<void> {
     }
 
     const resourceName = args[0];
+
+    if (!isValidDirectoryName(resourceName)) {
+        console.error(kleur.red('❌ Error: Invalid resource name'));
+        process.exit(1);
+    }
     const targetDir = join(process.cwd(), resourceName);
 
     if (existsSync(targetDir)) {
@@ -39,7 +56,8 @@ async function main(): Promise<void> {
     }
 
     const selectedPM = await selectPackageManager();
-    const toolSelection = await selectFormatterLinterTools();
+    const uiFramework = await selectUIFramework();
+    const featureSelection = await selectOptionalFeatures(uiFramework);
 
     let spinner = ora('Creating project directory...').start();
 
@@ -56,23 +74,23 @@ async function main(): Promise<void> {
 
         copyDirectory(templatesDir, targetDir);
 
-        for (const tool of toolSelection.selectedTools) {
-            const toolDir = join(__dirname, '..', 'templates', 'tools', tool.id);
-            if (existsSync(toolDir)) {
-                for (const configFile of tool.configFiles) {
-                    const srcPath = join(toolDir, configFile);
-                    const destFileName = configFile.endsWith('.template')
-                        ? configFile.replace('.template', '')
-                        : configFile;
-                    const destPath = join(targetDir, destFileName);
-                    if (existsSync(srcPath)) {
-                        copyFileSync(srcPath, destPath);
-                    }
+        try {
+            if (uiFramework !== 'none') {
+                const webCoreSrcDir = join(__dirname, '..', 'templates', 'web', 'core', 'src');
+                if (existsSync(webCoreSrcDir)) {
+                    copyDirectory(webCoreSrcDir, join(targetDir, 'src'));
                 }
             }
+        } catch {}
+
+        for (const feature of featureSelection.selectedFeatures) {
+            if (feature.isUIrequired) continue;
+            copyFeatureConfigFiles(join(__dirname, '..', 'templates'), feature.id, feature.configFiles, targetDir);
         }
 
         spinner.succeed('Template files copied');
+
+        await runUIFrameworkSetup(selectedPM, targetDir, featureSelection.selectedFeatures, uiFramework);
 
         spinner = ora('Configuring project files...').start();
         const packageJsonPath = join(targetDir, 'package.json');
@@ -86,7 +104,7 @@ async function main(): Promise<void> {
 
         if (existsSync(packageJsonPath)) {
             replaceTemplateVariables(packageJsonPath, templateVariables);
-            addToolScriptsToPackageJson(packageJsonPath, toolSelection.selectedTools, selectedPM.execCommand);
+            addFeatureScriptsToPackageJson(packageJsonPath, featureSelection.selectedFeatures, selectedPM);
         }
 
         if (existsSync(fxmanifestPath)) {
@@ -95,55 +113,71 @@ async function main(): Promise<void> {
 
         spinner.succeed('Project files configured');
 
-        process.chdir(join(targetDir, 'src'));
+        process.chdir(targetDir);
 
-        spinner = ora(`Installing dependencies with ${selectedPM.name}...`).start();
-        execSync(selectedPM.installCmd, { stdio: 'pipe' });
-        spinner.succeed('Base dependencies installed');
+        spinner = ora(`Installing dependencies...`).start();
+        await execAsync(selectedPM.installCmd);
+        await installDependencies(selectedPM, DEV_DEPENDENCIES, true);
+        await installDependencies(selectedPM, DEPENDENCIES, false);
 
-        spinner = ora('Installing FiveM dev dependencies...').start();
-        installDependencies(selectedPM, DEV_DEPENDENCIES, true);
-        spinner.succeed('FiveM dev dependencies installed');
-
-        spinner = ora('Installing FiveM runtime dependencies...').start();
-        installDependencies(selectedPM, DEPENDENCIES, false);
-        spinner.succeed('FiveM runtime dependencies installed');
-
-        if (toolSelection.selectedTools.length > 0) {
-            const toolDependencies = toolSelection.selectedTools.flatMap((tool) => tool.dependencies);
-            if (toolDependencies.length > 0) {
-                spinner = ora('Installing tool dependencies...').start();
-                installDependencies(selectedPM, toolDependencies, true);
-                spinner.succeed('Tool dependencies installed');
+        if (featureSelection.selectedFeatures.length > 0) {
+            const rootFeatureDependencies = featureSelection.selectedFeatures
+                .filter((feature) => !feature.isUIrequired)
+                .flatMap((feature) => feature.dependencies);
+            if (rootFeatureDependencies.length > 0) {
+                await installDependencies(selectedPM, rootFeatureDependencies, true);
             }
         }
 
-        process.chdir(targetDir);
-        initializeGitRepository(targetDir);
+        spinner.succeed('Dependencies installed');
+
+        spinner = ora('Formatting and linting code...').start();
+
+        try {
+            if (featureSelection.hasFormatting) {
+                const runFormatCmd = buildRunScriptCommand(selectedPM, 'format');
+                await execAsync(runFormatCmd);
+            }
+
+            if (featureSelection.hasLinting) {
+                const runLintCmd = buildRunScriptCommand(selectedPM, 'lint');
+                await execAsync(runLintCmd);
+            }
+        } catch {}
+
+        spinner.succeed('Completed formatting and linting');
+
+        await initializeGitRepository(targetDir);
+
+        spinner = ora('Building resource...').start();
+        await execAsync(buildRunScriptCommand(selectedPM, 'build'));
+        spinner.succeed('Resource built');
 
         console.log(`\n${kleur.green().bold('✅ Success! 🎉')}`);
         console.log(kleur.gray(`Your FiveM resource "${resourceName}" has been created.\n`));
 
-        if (toolSelection.selectedTools.length > 0) {
-            console.log(kleur.bold('Configured tool:'));
-            for (const tool of toolSelection.selectedTools) {
-                console.log(kleur.gray(`  • ${tool.name} - ${tool.description}`));
+        if (featureSelection.selectedFeatures.length > 0) {
+            console.log(kleur.bold('Features:'));
+            if (uiFramework !== 'none') {
+                console.log(kleur.gray(`  • UI - ${uiFramework[0].toUpperCase() + uiFramework.slice(1)}`));
+            }
+            for (const feature of featureSelection.selectedFeatures) {
+                console.log(kleur.gray(`  • ${feature.name} - ${feature.description}`));
             }
             console.log();
         }
 
         console.log(kleur.bold('Next steps:'));
         console.log(kleur.cyan(`  cd ${resourceName}`));
-        console.log(
-            kleur.cyan(
-                `  ${selectedPM.command} ${selectedPM.command === 'bun' || selectedPM.command === 'npm' ? 'run' : ''} dev`,
-            ),
-        );
+        const devRun = buildRunScriptCommand(selectedPM, 'dev');
+        const prodRun = buildRunScriptCommand(selectedPM, 'build');
+        console.log(kleur.cyan(`  ${devRun}`) + kleur.gray(` or`) + kleur.cyan(` ${prodRun}`));
 
         console.log(`\n${kleur.gray('Happy coding! 🎮')}`);
     } catch (error) {
         spinner.fail('An error occurred');
         console.error(kleur.red('❌ Error:'), error instanceof Error ? error.message : error);
+        cleanupOnError(targetDir);
         process.exit(1);
     }
 }
@@ -156,7 +190,19 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
+function cleanupOnError(targetDir: string): void {
+    try {
+        process.chdir(originalCwd);
+        rmSync(targetDir, { recursive: true, force: true });
+    } catch {}
+}
+
 main().catch((error) => {
     console.error(kleur.red('❌ Unexpected error:'), error);
+    const args = process.argv.slice(2);
+    if (args.length > 0) {
+        const targetDir = join(originalCwd, args[0]);
+        cleanupOnError(targetDir);
+    }
     process.exit(1);
 });

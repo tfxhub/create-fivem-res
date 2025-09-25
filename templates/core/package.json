@@ -1,18 +1,17 @@
 {
-  "name": "{{RESOURCE_NAME}}",
-  "version": "1.0.0",
-  "author": "ianram0s",
-  "main": "index.js",
-  "description": "A TypeScript resource for FiveM.",
-  "engines": {
-    "node": ">=22.10.0"
-  },
-  "license": "MIT",
-  "scripts": {
-    "dev": "{{PACKAGE_MANAGER_EXEC}} tfxb build",
-    "build": "{{PACKAGE_MANAGER_EXEC}} tfxb build --production",
-    "types": "{{PACKAGE_MANAGER_EXEC}} tfxb types",
-    "clear": "{{PACKAGE_MANAGER_EXEC}} tfxb clear"
-  },
-  "type": "module"
+    "name": "{{RESOURCE_NAME}}",
+    "version": "1.0.0",
+    "author": "ianram0s",
+    "description": "A TypeScript resource for FiveM.",
+    "engines": {
+        "node": ">=22.10.0"
+    },
+    "license": "MIT",
+    "scripts": {
+        "dev": "{{PACKAGE_MANAGER_EXEC}} tfxb build",
+        "build": "{{PACKAGE_MANAGER_EXEC}} tfxb build --production",
+        "types": "{{PACKAGE_MANAGER_EXEC}} tfxb types",
+        "clear": "{{PACKAGE_MANAGER_EXEC}} tfxb clear"
+    },
+    "type": "module"
 }
