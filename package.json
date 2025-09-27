@@ -1,6 +1,6 @@
 {
     "name": "create-fivem-res",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "publishConfig": {
         "access": "public"
     },
@@ -16,7 +16,7 @@
     "scripts": {
         "build": "tsc",
         "dev": "tsc --watch",
-        "prepublishOnly": "bun run build",
+        "prepublishOnly": "bun run format && bun run build",
         "test": "bun dist/index.js",
         "format": "prettier --write .",
         "lint": "prettier --check ."
