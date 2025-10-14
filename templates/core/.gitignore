@@ -1,7 +1,6 @@
 node_modules
 dist
 packages
-types
 fxmanifest.lua
 .yarn.installed
 *.zip
